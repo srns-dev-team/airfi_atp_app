@@ -16,6 +16,9 @@ class TalkbackAudioService {
   bool _disposed = false;
   int _playLog = 0;
 
+  /// Last native init failure reason (FlutterError message), for surfacing.
+  String? lastInitError;
+
   OnAudioDataRecorded? _onData;
   OnError? _onError;
 
@@ -28,6 +31,7 @@ class TalkbackAudioService {
 
   Future<bool> initialize({int sampleRate = 8000, int channels = 1}) async {
     if (_disposed) return false;
+    lastInitError = null;
     try {
       _ch.setMethodCallHandler(_handle);
       final ok = await _ch.invokeMethod<bool>('initialize', {
@@ -35,7 +39,13 @@ class TalkbackAudioService {
         'channels': channels,
       });
       return ok ?? true;
+    } on PlatformException catch (e) {
+      lastInitError = e.message ?? e.code;
+      debugPrint('[Talkback] init failed: $lastInitError');
+      _onError?.call('init: $lastInitError');
+      return false;
     } catch (e) {
+      lastInitError = '$e';
       _onError?.call('init: $e');
       return false;
     }

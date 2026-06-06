@@ -39,5 +39,15 @@ end
 post_install do |installer|
   installer.pods_project.targets.each do |target|
     flutter_additional_ios_build_settings(target)
+
+    target.build_configurations.each do |config|
+      # permission_handler: only permissions defined here are compiled in.
+      # Without PERMISSION_MICROPHONE=1 the mic handler is stubbed out and
+      # request() returns .denied immediately with no system prompt.
+      defs = config.build_settings['GCC_PREPROCESSOR_DEFINITIONS'] || ['$(inherited)']
+      defs = [defs] unless defs.is_a?(Array)
+      defs << 'PERMISSION_MICROPHONE=1' unless defs.include?('PERMISSION_MICROPHONE=1')
+      config.build_settings['GCC_PREPROCESSOR_DEFINITIONS'] = defs
+    end
   end
 end

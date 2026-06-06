@@ -1,8 +1,6 @@
 /// G.711A (a-law) codec — PCM16 <-> 8-bit a-law. Talkback wire format is
 /// 8 kHz mono a-law both directions; the device + server relay speak it natively.
 class G711ACodec {
-  static const int _maxPcmValue = 32768;
-
   /// PCM16 (little-endian byte list) -> a-law bytes.
   static List<int> encodePcmToAlaw(List<int> pcmData) {
     final result = <int>[];
@@ -25,48 +23,47 @@ class G711ACodec {
     return result;
   }
 
+  // Standard ITU-T G.711 A-law compression. Byte-exact to ffmpeg `pcm_alaw`
+  // (the server's intercom decoder), verified against ffmpeg ground truth.
+  // The previous loop assigned the exponent INVERTED (small magnitude → exp 7
+  // instead of 0), so ffmpeg decoded every uplink sample as garbage → noisy
+  // talkback. Do not "simplify" the exponent search.
   static int _pcm16ToAlaw8(int pcm16) {
-    int sign = 0;
-    int magnitude = pcm16;
-    if (pcm16 < 0) {
-      sign = 0x80;
-      magnitude = -pcm16;
-    }
-    if (magnitude > (_maxPcmValue - 1)) magnitude = _maxPcmValue - 1;
+    final int sign = pcm16 < 0 ? 0x00 : 0x80;
+    int magnitude = pcm16 < 0 ? -pcm16 : pcm16;
+    if (magnitude > 32635) magnitude = 32635; // A-law clip point
 
-    int exponent = 7;
-    int stepSize = 256;
-    for (int e = 7; e >= 0; e--) {
-      if (magnitude < stepSize) {
-        exponent = e;
-        break;
+    int alaw;
+    if (magnitude >= 256) {
+      int exponent = 7;
+      int expMask = 0x4000;
+      while ((magnitude & expMask) == 0 && exponent > 0) {
+        exponent--;
+        expMask >>= 1;
       }
-      stepSize *= 2;
-    }
-    int mantissa;
-    if (exponent < 1) {
-      mantissa = (magnitude >> 4) & 0x0F;
+      final int mantissa = (magnitude >> (exponent + 3)) & 0x0F;
+      alaw = (exponent << 4) | mantissa;
     } else {
-      mantissa = (magnitude >> (exponent + 3)) & 0x0F;
+      alaw = magnitude >> 4;
     }
-    return (sign | (exponent << 4) | mantissa) ^ 0x55;
+    return alaw ^ (sign ^ 0x55);
   }
 
+  // Standard ITU-T G.711 A-law expansion. Byte-exact to ffmpeg `pcm_alaw`
+  // decode (verified). Previous version mis-scaled the mantissa/exponent
+  // (242/256 codes wrong) → noisy downlink. Sign bit: MSB set = positive.
   static int _alaw8ToPcm16(int alawByte) {
-    alawByte ^= 0x55;
-    final sign = alawByte & 0x80;
-    final exponent = (alawByte >> 4) & 0x07;
-    final mantissa = alawByte & 0x0F;
-    int pcm16 = (mantissa << 4) | 0x08;
-    if (exponent > 0) {
-      pcm16 <<= (exponent + 2);
+    final int a = alawByte ^ 0x55;
+    int t = (a & 0x0F) << 4;
+    final int seg = (a & 0x70) >> 4;
+    if (seg == 0) {
+      t += 8;
+    } else if (seg == 1) {
+      t += 0x108;
     } else {
-      pcm16 >>= 2;
+      t = (t + 0x108) << (seg - 1);
     }
-    if (sign == 0) pcm16 = -pcm16;
-    if (pcm16 > 32767) pcm16 = 32767;
-    if (pcm16 < -32768) pcm16 = -32768;
-    return pcm16;
+    return (a & 0x80) != 0 ? t : -t;
   }
 
   static const int sampleRate = 8000;

@@ -46,7 +46,11 @@ final class TalkbackAudioPlugin {
       let a = call.arguments as? [String: Any]
       let sr = (a?["sampleRate"] as? NSNumber)?.doubleValue ?? 8000
       let ch = (a?["channels"] as? NSNumber)?.uint32Value ?? 1
-      result(initializeAudio(sampleRate: sr, channels: ch))
+      if let reason = initializeAudio(sampleRate: sr, channels: ch) {
+        result(FlutterError(code: "INIT_FAILED", message: reason, details: nil))
+      } else {
+        result(true)
+      }
     case "startRecording": result(startRecording())
     case "stopRecording": result(stopRecording())
     case "playAudio":
@@ -69,7 +73,9 @@ final class TalkbackAudioPlugin {
 
   // MARK: - Lifecycle
 
-  private func initializeAudio(sampleRate sr: Double, channels ch: UInt32) -> Bool {
+  /// Returns nil on success, else a human-readable failure reason (surfaced to
+  /// Dart as a FlutterError so the in-app error shows the real cause).
+  private func initializeAudio(sampleRate sr: Double, channels ch: UInt32) -> String? {
     releaseAudio()
     sampleRate = sr > 0 ? sr : 8000
     channelCount = ch >= 2 ? 2 : 1
@@ -80,16 +86,15 @@ final class TalkbackAudioPlugin {
                               options: [.defaultToSpeaker, .allowBluetooth])
       try session.setActive(true, options: .notifyOthersOnDeactivation)
     } catch {
-      diag("session error: \(error)")
-      return false
+      let r = "session error: \(error.localizedDescription)"
+      diag(r); return r
     }
 
     guard let wire = AVAudioFormat(commonFormat: .pcmFormatInt16, sampleRate: sampleRate,
                                    channels: channelCount, interleaved: true),
           let processing = AVAudioFormat(commonFormat: .pcmFormatFloat32, sampleRate: sampleRate,
                                          channels: channelCount, interleaved: false) else {
-      diag("format build failed")
-      return false
+      let r = "format build failed"; diag(r); return r
     }
     wireFormat = wire
     processingFormat = processing
@@ -101,7 +106,7 @@ final class TalkbackAudioPlugin {
     // throws (older HW / unusual routes).
     if #available(iOS 13.0, *) {
       do { try input.setVoiceProcessingEnabled(true) }
-      catch { diag("VPIO enable failed (continuing): \(error)") }
+      catch { diag("VPIO enable failed (continuing): \(error.localizedDescription)") }
     }
 
     if playerNode.engine != nil { engine.detach(playerNode) }
@@ -109,17 +114,22 @@ final class TalkbackAudioPlugin {
     engine.connect(playerNode, to: engine.mainMixerNode, format: processing)
     engine.mainMixerNode.outputVolume = playbackVolume
 
+    // prepare() arms the IO units so inputNode reports its real hardware format.
+    // Enabling VPIO can leave outputFormat at 0 Hz until the graph is prepared,
+    // which made the pre-start tap install fail. Prepare first, then tap.
+    engine.prepare()
+
     // Install the mic tap BEFORE first start so input + output arm together.
     if !installRecordTap() {
-      diag("tap install failed at init")
-      return false
+      let r = "tap install failed (inputSR=\(input.outputFormat(forBus: 0).sampleRate))"
+      diag(r); return r
     }
 
-    engine.prepare()
-    do { try engine.start() } catch { diag("engine start error: \(error)"); return false }
+    do { try engine.start() }
+    catch { let r = "engine start error: \(error.localizedDescription)"; diag(r); return r }
     playerNode.play()
     diag("initialized inputSR=\(input.outputFormat(forBus: 0).sampleRate) cat=\(session.category.rawValue)")
-    return true
+    return nil
   }
 
   private func releaseAudio() {
@@ -146,7 +156,17 @@ final class TalkbackAudioPlugin {
   // MARK: - Recording (tap always runs; flag gates forwarding)
 
   private func startRecording() -> Bool {
-    guard engine.isRunning, tapInstalled else { return false }
+    // Self-heal: the engine or tap can be torn down between initialize() and the
+    // first talk press (route change, session interruption, ATP tile grabbing
+    // the audio session). Re-arm rather than fail with tx=false.
+    if !tapInstalled {
+      if !installRecordTap() { diag("startRecording: tap reinstall failed"); return false }
+    }
+    if !engine.isRunning {
+      engine.prepare()
+      do { try engine.start() }
+      catch { diag("startRecording: engine restart error: \(error.localizedDescription)"); return false }
+    }
     isRecording = true
     diag("startRecording OK engineRunning=\(engine.isRunning) tapInstalled=\(tapInstalled)")
     return true

@@ -57,7 +57,10 @@ class TalkbackController extends ChangeNotifier {
     //    native plugin's concern, handled there — kept off the video path.
     if (!await _audio.initialize(
         sampleRate: G711ACodec.sampleRate, channels: G711ACodec.channels)) {
-      _set(loading: false, status: 'idle', error: 'Audio init failed');
+      _set(
+          loading: false,
+          status: 'idle',
+          error: 'Audio init failed: ${_audio.lastInitError ?? 'unknown'}');
       return;
     }
     _uplink.clear();
