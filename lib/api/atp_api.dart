@@ -9,6 +9,13 @@ import '../models/device.dart';
 /// raw decoded JSON so callers can inspect status; [listDevices] maps to models.
 class AtpApi {
   static const _timeout = Duration(seconds: 8);
+  // History (SD-card) calls are inherently slow: the device must seek the clip
+  // and a playback SWITCH does an ACK-gated 0x9202 STOP + ~3s settle server-side
+  // before the new 0x9201. 8s is not enough → TimeoutException. The ATP client
+  // doesn't consume the server's HLS readiness anyway (it opens the ATP WS and
+  // rides its own no-signal grace), so we also pass waitReady:false to stop the
+  // server blocking the HTTP on an HLS path_ready loop it doesn't need.
+  static const _historyTimeout = Duration(seconds: 25);
 
   /// GET /devices → connected device list.
   static Future<List<Device>> listDevices() async {
@@ -52,7 +59,10 @@ class AtpApi {
       'streamType': streamType,
       'startTime': startTime,
       'endTime': endTime,
-    });
+      // ATP client opens the WS itself; don't make the server block the HTTP
+      // on an HLS path_ready wait the app never reads.
+      'waitReady': false,
+    }, timeout: _historyTimeout);
     return (r?['ok'] as bool?) ?? (r != null);
   }
 
@@ -65,7 +75,7 @@ class AtpApi {
       'deviceId': deviceId,
       'date': date,
       'channel': 'ALL',
-    });
+    }, timeout: _historyTimeout);
     final all = (r?['allChannels'] as Map?)?.cast<String, dynamic>() ?? const {};
     final intervals =
         (all['intervals'] as List?)?.cast<Map<String, dynamic>>() ?? const [];
@@ -108,14 +118,15 @@ class AtpApi {
   }
 
   static Future<Map<String, dynamic>?> _post(
-      String path, Map<String, dynamic> body) async {
+      String path, Map<String, dynamic> body,
+      {Duration? timeout}) async {
     final r = await http
         .post(
           Uri.parse('${Config.apiBase}$path'),
           headers: const {'content-type': 'application/json'},
           body: json.encode(body),
         )
-        .timeout(_timeout);
+        .timeout(timeout ?? _timeout);
     if (r.statusCode != 200) {
       throw '$path HTTP ${r.statusCode}: ${r.body}';
     }
