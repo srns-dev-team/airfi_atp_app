@@ -22,4 +22,17 @@ class Config {
   /// Talkback WS URL (server relays G.711A both ways).
   static String talkbackWsUrl({required String deviceId, required int channel}) =>
       '$wsBase/ws/talkback?deviceId=$deviceId&channel=$channel';
+
+  /// Resolve an evidence / download URL to something fetchable. Server may
+  /// return an absolute S3 URL (S3_REQUIRED staging path) OR a relative path
+  /// like "/evidence/file/DMS/x.jpg" / "/downloads/y.mp4" — prepend [apiBase]
+  /// for the latter. Empty stays empty.
+  static String resolveMediaUrl(String url) {
+    if (url.isEmpty) return url;
+    if (url.startsWith('http://') || url.startsWith('https://')) return url;
+    final base = apiBase.endsWith('/')
+        ? apiBase.substring(0, apiBase.length - 1)
+        : apiBase;
+    return url.startsWith('/') ? '$base$url' : '$base/$url';
+  }
 }

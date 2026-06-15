@@ -36,12 +36,17 @@ dependencies:
   cupertino_icons: ^1.0.8
 
   # Native ATP player (VideoToolbox / MediaCodec, zero-copy texture).
+  # Pulled from the Airfi private pub server (no repo access needed).
   airfi_atp_flutter:
-    path: ../../office/new_dev/new_zlm/airfi_atp_flutter
+    hosted: https://atp.airfi.in:4443
+    version: ^0.1.0
 
   http: ^1.2.0
   web_socket_channel: ">=2.4.0 <4.0.0"
   permission_handler: ^11.3.0
+  url_launcher: ^6.2.0
+  gal: ^2.3.0          # save downloaded clips to Photos library
+  path_provider: ^2.1.0 # temp dir for the download buffer
 
 dev_dependencies:
   flutter_test:

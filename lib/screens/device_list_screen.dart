@@ -4,6 +4,7 @@ import '../api/atp_api.dart';
 import '../config.dart';
 import '../models/device.dart';
 import 'device_screen.dart';
+import 'download_center_screen.dart';
 
 class DeviceListScreen extends StatefulWidget {
   const DeviceListScreen({super.key});
@@ -50,6 +51,13 @@ class _DeviceListScreenState extends State<DeviceListScreen> {
       appBar: AppBar(
         title: const Text('Devices'),
         actions: [
+          IconButton(
+            tooltip: 'Download Centre',
+            onPressed: () => Navigator.of(context).push(
+              MaterialPageRoute(builder: (_) => const DownloadCenterScreen()),
+            ),
+            icon: const Icon(Icons.download_for_offline),
+          ),
           IconButton(onPressed: _refresh, icon: const Icon(Icons.refresh)),
         ],
       ),

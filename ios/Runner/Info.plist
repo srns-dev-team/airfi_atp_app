@@ -6,6 +6,8 @@
 	<true/>
 	<key>NSMicrophoneUsageDescription</key>
 	<string>Microphone is used for two-way intercom (talkback) with vehicle cameras.</string>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>Downloaded recordings are saved to your Photos library.</string>
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>

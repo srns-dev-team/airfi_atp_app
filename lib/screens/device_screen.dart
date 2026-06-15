@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../models/device.dart';
 import '../talkback/talkback_controller.dart';
 import '../widgets/atp_stream_view.dart';
+import 'alerts_tab.dart';
 import 'fullscreen_screen.dart';
 import 'playback_tab.dart';
 
@@ -16,7 +17,7 @@ class DeviceScreen extends StatefulWidget {
 
 class _DeviceScreenState extends State<DeviceScreen>
     with SingleTickerProviderStateMixin {
-  late final TabController _tabs = TabController(length: 2, vsync: this);
+  late final TabController _tabs = TabController(length: 3, vsync: this);
 
   @override
   void dispose() {
@@ -35,6 +36,7 @@ class _DeviceScreenState extends State<DeviceScreen>
           tabs: const [
             Tab(icon: Icon(Icons.sensors), text: 'Live'),
             Tab(icon: Icon(Icons.history), text: 'Playback'),
+            Tab(icon: Icon(Icons.warning_amber), text: 'Alerts'),
           ],
         ),
       ),
@@ -43,6 +45,7 @@ class _DeviceScreenState extends State<DeviceScreen>
         children: [
           _LiveTab(device: d),
           PlaybackTab(device: d),
+          AlertsTab(device: d),
         ],
       ),
     );

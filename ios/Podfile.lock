@@ -2,26 +2,39 @@ PODS:
   - airfi_atp_flutter (0.1.0):
     - Flutter
   - Flutter (1.0.0)
+  - gal (1.0.0):
+    - Flutter
+    - FlutterMacOS
   - permission_handler_apple (9.4.8):
+    - Flutter
+  - url_launcher_ios (0.0.1):
     - Flutter
 
 DEPENDENCIES:
   - airfi_atp_flutter (from `.symlinks/plugins/airfi_atp_flutter/ios`)
   - Flutter (from `Flutter`)
+  - gal (from `.symlinks/plugins/gal/darwin`)
   - permission_handler_apple (from `.symlinks/plugins/permission_handler_apple/ios`)
+  - url_launcher_ios (from `.symlinks/plugins/url_launcher_ios/ios`)
 
 EXTERNAL SOURCES:
   airfi_atp_flutter:
     :path: ".symlinks/plugins/airfi_atp_flutter/ios"
   Flutter:
     :path: Flutter
+  gal:
+    :path: ".symlinks/plugins/gal/darwin"
   permission_handler_apple:
     :path: ".symlinks/plugins/permission_handler_apple/ios"
+  url_launcher_ios:
+    :path: ".symlinks/plugins/url_launcher_ios/ios"
 
 SPEC CHECKSUMS:
   airfi_atp_flutter: 1ce82d78b9ee8918311a3b686ebf79eea1bd8002
   Flutter: cabc95a1d2626b1b06e7179b784ebcf0c0cde467
+  gal: baecd024ebfd13c441269ca7404792a7152fde89
   permission_handler_apple: 92d754bbaa7361d436db2d6c3c1c2a0fdcec462e
+  url_launcher_ios: 7a95fa5b60cc718a708b8f2966718e93db0cef1b
 
 PODFILE CHECKSUM: 1045f1a4115d9833127965156206c26ef873b2f1
 
