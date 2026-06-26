@@ -49,7 +49,7 @@ class _DeviceListScreenState extends State<DeviceListScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Devices'),
+        title: const Text('Fleet Management'),
         actions: [
           IconButton(
             tooltip: 'Download Centre',

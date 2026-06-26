@@ -14,7 +14,7 @@ class AirfiAtpApp extends StatelessWidget {
       brightness: Brightness.dark,
     );
     return MaterialApp(
-      title: 'AirFi ATP',
+      title: 'Fleet Management',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         useMaterial3: true,

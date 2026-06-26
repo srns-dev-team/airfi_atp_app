@@ -136,7 +136,7 @@ class _DownloadCenterScreenState extends State<DownloadCenterScreen> {
     final active = _jobs.where((j) => !j.isTerminal).length;
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Download Centre'),
+        title: const Text('Fleet Management'),
         actions: [
           if (active > 0)
             Center(

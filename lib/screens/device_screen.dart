@@ -30,7 +30,7 @@ class _DeviceScreenState extends State<DeviceScreen>
     final d = widget.device;
     return Scaffold(
       appBar: AppBar(
-        title: Text(d.label),
+        title: const Text('Fleet Management'),
         bottom: TabBar(
           controller: _tabs,
           tabs: const [
