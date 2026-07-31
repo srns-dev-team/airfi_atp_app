@@ -5,10 +5,10 @@ packages:
     dependency: "direct main"
     description:
       name: airfi_atp_flutter
-      sha256: "5e16324a0d74a494476522826ea1558db393d2971b2f50ab593ffb9939d4ef88"
+      sha256: "6769e0a37424fddbd6c42d18d9ced8953d7510055e116a4f7cb571b51bdfb49f"
       url: "https://atp.airfi.in:4443"
     source: hosted
-    version: "0.1.0"
+    version: "0.1.2"
   args:
     dependency: transitive
     description:
